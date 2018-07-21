@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+    </head>
+    <body> 
+        <canvas id = "myCanvas" width="1500" height="800" style="border:1px solid #c3c3c3;"></canvas>
+       
+        <div style= 'float:right' >
+            <button id="g_generate" >Generate</button>
+        </div>
+        <div style = 'float:right'>
+            <button id="g_accelerated_speed">Deformation</button>
+        </div>
+        <p id = cordinnal></p>
+        <script >
+            var array = []
+            var canvas = document.getElementById('myCanvas')
+            var ctx = canvas.getContext("2d")
+            var m_generate = document.getElementById('g_generate')
+            var m_deformation = document.getElementById('g_accelerated_speed')
+            m_generate.addEventListener('click', generateDots)
+            m_deformation.addEventListener('click', deformationDot)
+            function generateDots(){
+                console.log('Starting Generate')
+                canvas.onmousedown = function(e){                
+                    for(var i = 0; i < 10; ++i){
+                        var arcDegree = Math.random() * 2 * Math.PI
+                        var pos = {
+                            'x': e.clientX + Math.cos(arcDegree) * 50 * Math.random(), 
+                            'y': e.clientY + Math.sin(arcDegree) * 50 * Math.random(), 
+                        }
+                        array.push(pos)
+                        ctx.fillStyle = "#000000"
+                        ctx.beginPath()
+                        ctx.arc(pos.x,pos.y,1,0,Math.PI*2,true)
+                        ctx.closePath()
+                        ctx.fill()
+                    }
+                    console.log(array)
+                }                
+            }
+
+            function deformationDot(){
+                array = []
+                ctx.clearRect(0, 0, canvas.width, canvas.height)
+                console.log('Starting accelerated-speed-deformation')
+                canvas.onmousemove = function(e){
+                    console.log('heihei')
+                    var firstTime = new Date()
+                    console.log(firstTime)
+                    var g_radius = 10
+                    ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'
+                    ctx.beginPath()
+                    var x_first = e.clientX
+                    var y_first = e.clientY
+                    console.log(x_first,y_first)
+                        var lastTime = new Date()
+                        console.log(lastTime)
+                        var x_last = e.clientX
+                        var y_last = e.clientY
+                        console.log(x_last,y_last)
+                        var g_speed = speed(x_first,y_first,x_last,y_last,firstTime,lastTime)
+                        var vx = Math.cos(45 * Math.PI / 180) * 1
+                        var vy = Math.cos(45 * Math.PI / 180) * 1
+                        console.log(g_speed.x,g_speed.y)
+                        //var m_accelerated_speed = acceleratedSpeed()
+                        ctx.arc(x_last, y_last, g_radius, 0,Math.PI*2, true)
+                        ctx.closePath()
+                        ctx.fill()
+                        var x_first = x_first
+                        var y_first = y_first
+                        var firstTime = lastTime
+                    
+                    console.log(x,y)
+                   // document.getElementById("cordinnal").innerHTML = "(" + x + "," + y + ")"
+
+                }
+            }
+
+            function speed(m_fistPositionX,m_fistPositionY,m_lastPositionX,m_lastPositionY,m_firstTime,m_lastTime){
+                var m_speed = {
+                    x : (m_fistPositionX - m_lastPositionX)/(m_lastTime-m_firstTime),
+                    y : (m_fistPositionY - m_lastPositionY)/(m_lastTime-m_firstTime)
+                }
+                return m_speed
+            }
+
+        </script>
+    </body>
+</html>
