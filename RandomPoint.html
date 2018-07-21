@@ -15,6 +15,7 @@
                 this.x = x
                 this.y = y
                 this.radius = radius
+                // return this;
             }
             var volecityFirst,volecityLast
             var count = 1
@@ -36,6 +37,7 @@
                     var radius = 10 
                     clickX = e.clientX
                     clickY = e.clientY
+                    console.log(" clickX, clickY ", clickX, clickY);
                     drawCircles(clickX,clickY,radius)
                     //previousCircle = circle
                     isDragging = true
@@ -44,11 +46,20 @@
 
                 function stopDragging(){
                     isDragging = false
+                    console.log(' clear canvas.width, canvas.height ',  canvas.width, canvas.height)
+                    // ctx.clearRect(0, 0, canvas.width, canvas.height)
                 }
 
                 function drawCircles(CircleX,CircleY,CircleRadius){
+
                     ctx.clearRect(0, 0, canvas.width, canvas.height)
-                    circle = new Circle(CircleX,CircleY,CircleRadius)           
+
+                    console.log(' clear canvas.width, canvas.height ',  canvas.width, canvas.height)
+
+                    var circle = new Circle(CircleX,CircleY,CircleRadius)  
+                    //LM++  
+                    ctx.beginPath()       
+                    
                     ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI*2)
                     //console.log('后一个',LastX,LastY)
                     //ctx.lineWidth = 5
