@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+    </head>
+    <body> 
+        <canvas id = "myCanvas" width="1700" height="1000" style=" border:1px solid #c3c3c3;"></canvas>
+        <div id="coverdiv" style= 'float:right' >
+            <button id="g_accelerated_speed" >Deformation</button>
+        </div>
+
+        <script >
+            function Circle(x,y,radius){
+                this.x = x
+                this.y = y
+                this.radius = radius
+            }
+            var volecityFirst,volecityLast
+            var count = 1
+            var preTime = undefined
+            var preX,preY = 0
+            var previousCircle
+            //var isDragging = false     
+            var canvas = document.getElementById('myCanvas')
+            var ctx = canvas.getContext("2d")
+            var m_deformation = document.getElementById('g_accelerated_speed')
+            m_deformation.addEventListener('mousemove', deformationDot)
+            function deformationDot(){
+                //canvas.onmousedown = canvasClick
+                //canvas.onmouseup = stopDragging
+                //canvas.onmouseout = stopDragging
+                canvas.onmousemove = dragCircle
+
+                /*function canvasClick(e){ 
+                    var radius = 10 
+                    clickX = e.clientX
+                    clickY = e.clientY
+                    drawCircles(clickX,clickY,radius)
+                    //previousCircle = circle
+                    isDragging = true
+                    console.log('FirstXY',clickX,clickY)
+                }
+*/
+             
+
+                function drawCircles(CircleX,CircleY,CircleRadius){
+                    ctx.clearRect(0, 0, canvas.width, canvas.height)
+                    circle = new Circle(CircleX,CircleY,CircleRadius)           
+                    ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI*2)
+                    //console.log('后一个',LastX,LastY)
+                    //ctx.lineWidth = 5
+                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)'
+                    //ctx.stroke()
+                    ctx.closePath()
+                    ctx.fill()
+                    
+                }
+
+                function dragCircle(e){
+                        var currentTime = Date.now()
+                        var addVolecity = 1
+                        if(typeof preTime != "undefined"){
+                            var MoveX = e.pageX - preX
+                            var MoveY = e.pageY - preY
+                            var time = currentTime - preTime
+                            var volecityX = MoveX/time
+                            var volecityY = MoveY/time
+                            volecityLast = Math.sqrt(volecityX*volecityX + volecityY*volecityY)
+                            if(count != 1 ){
+                                addVolecity = (volecityLast - volecityFirst) / time
+                                console.log('计算所得加速度',addVolecity)
+                                //var volecityFirst = volecityLast    
+                            }       
+                            volecityFirst = volecityLast 
+                            count = 2       
+                            if(addVolecity > 0){
+                                addVolecity = addVolecity * 10
+                            }else if(addVolecity <= 0){  
+                                addVolecity = 0.5
+                            }
+                            drawCircles(e.pageX,e.pageY,10*addVolecity)
+                            console.log('volecityFirst',volecityFirst)
+                            console.log('volecityLast',volecityLast)
+                            console.log('呈现的加速度', addVolecity)
+                        }
+                        preX = e.pageX
+                        preY = e.pageY
+                        preTime = currentTime
+                        //volecityFirst = 0
+                        
+                    
+                    
+                }
+            }                
+            
+        </script>
+    </body>
+</html>
