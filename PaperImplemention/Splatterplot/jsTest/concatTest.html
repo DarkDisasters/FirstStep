@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+    </head>
+    <body>
+    <script>
+        colorWeight = function(a,b){
+            this.a = a
+            this.b = b
+        }
+
+        test = function(){
+            var la = 1
+            var lb = 1
+            var ja = 2 
+            var jb = 2
+            //color1 = new colorWeight(la,lb)
+            //color2 = new colorWeight(ja,jb)
+            var middleArray = []
+            color1 = {a:2, b:3}
+            color2 = {a:1, b:4}
+            color3 = 
+            //color1.a = la
+            //color1.b = lb
+            //color2.a = ja
+            //color2.b = jb
+            middleArray.push(color1)
+            console.log("middleArray1",middleArray)
+            middleArray.push(color2)
+            middleArray.push(color3)
+
+            var array = []
+            
+            color = middleArray[1].a
+            array.push(color)
+
+            array.push(middleArray[0])
+            array.push(middleArray[2])
+
+            middleArray.shift()
+            middleArray.shift()
+            middleArray.shift()
+            console.log("final",array)
+        }
+
+        test()
+    </script>
+    </body>
+</html>

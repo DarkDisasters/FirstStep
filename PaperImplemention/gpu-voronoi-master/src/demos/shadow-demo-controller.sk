@@ -1,0 +1,101 @@
+namespace ShadowDemoController {
+    const initialSpread = 1
+    const minSpread = 1
+    const maxSpread = 256
+
+    const initialBlur = 22
+    const minBlur = 1
+    const maxBlur = 256
+}
+
+class ShadowDemoController {
+    const _jfa JumpFlood
+    const _gridSize int
+    const _outputCanvas HTMLCanvasElement
+    const _spreadSlider Slider
+    const _blurSlider Slider
+    const _jfaSeedCanvas HTMLCanvasElement
+    const _shadowCanvas HTMLCanvasElement
+    const _outputCanvasCtx CanvasRenderingContext2D
+    const _voronoi JumpFlood
+    const _controller DraggableTextDemoController
+
+    def new(container HTMLElement, gridSize int, outputCanvas HTMLCanvasElement, spreadSliderElement HTMLElement, blurSliderElement HTMLElement) {
+        _gridSize = gridSize
+        _outputCanvas = outputCanvas
+
+        # Create the canvas that we draw seeds onto
+        _jfaSeedCanvas = document.createElement("canvas") as HTMLCanvasElement
+        sizeCanvas(_jfaSeedCanvas, _gridSize)
+
+        # Create the canvas that we draw the shadow onto (this is the output
+        # of JFA)
+        _shadowCanvas = document.createElement("canvas") as HTMLCanvasElement
+        sizeCanvas(_shadowCanvas, _gridSize)
+
+        _outputCanvasCtx = _outputCanvas.getContext2D
+
+        # Initialize the Voronoi generator
+        tryOrDisplayError(container, => {
+            _jfa = JumpFlood.new(_shadowCanvas)
+        })
+        if _jfa == null {
+            return
+        }
+
+        _controller = DraggableTextDemoController.new(_jfaSeedCanvas, outputCanvas)
+        _controller.onDraw = => { render }
+
+        _spreadSlider = Slider.new(spreadSliderElement, {
+            "start": initialSpread,
+            "range": {
+                "min": minSpread,
+                "max": maxSpread
+            }
+        })
+        _spreadSlider.on("slide", => { render })
+
+        _blurSlider = Slider.new(blurSliderElement, {
+            "start": initialBlur,
+            "range": {
+                "min": minBlur,
+                "max": maxBlur
+            }
+        })
+        _blurSlider.on("slide", => { render })
+
+        render
+    }
+
+    def render {
+        const shadowSpread = _spreadSlider.get
+        const shadowBlur = _blurSlider.get
+
+        const opts = JumpFlood.Options.new
+        opts.seedCanvasBackgroundColor = Color.white.toVec4
+        opts.output = .DROP_SHADOW
+        opts.shadowSpread = shadowSpread
+        opts.shadowBlur = shadowBlur
+        _jfa.computeAndDraw(_jfaSeedCanvas, opts)
+
+        # Output canvas has a white background
+        _outputCanvasCtx.fillStyle = "white"
+        _outputCanvasCtx.fillRect(0, 0, _outputCanvas.width / Browser.powerOfTwoLessThanDevicePixelRatio, _outputCanvas.height / Browser.powerOfTwoLessThanDevicePixelRatio)
+
+        # Draw the shadow of the text on the background
+        _outputCanvasCtx.drawImage(
+            _shadowCanvas,
+            0,
+            0,
+            _outputCanvas.width / Browser.powerOfTwoLessThanDevicePixelRatio,
+            _outputCanvas.height / Browser.powerOfTwoLessThanDevicePixelRatio
+        )
+
+        # Draw the text to the center of the output canvas
+        _controller.drawTextToContext(_outputCanvasCtx, _controller.center)
+
+        _outputCanvasCtx.strokeStyle = "#C5C5C5"
+        _outputCanvasCtx.lineWidth = 1
+        _outputCanvasCtx.strokeRect(0, 0, _outputCanvas.width / Browser.powerOfTwoLessThanDevicePixelRatio, _outputCanvas.height / Browser.powerOfTwoLessThanDevicePixelRatio)
+    }
+}

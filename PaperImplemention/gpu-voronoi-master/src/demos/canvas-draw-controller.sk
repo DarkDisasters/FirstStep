@@ -1,0 +1,65 @@
+# This file implements a demo where the user can draw seeds in one canvas
+# and see their Voronoi diagram in another canvas. Seeds have randomly
+# generated (pink-ish) colors.
+
+namespace CanvasDrawController {
+    const dotRadius = 2
+}
+
+class CanvasDrawController {
+    const _inputCanvas HTMLCanvasElement
+    const _outputCanvas HTMLCanvasElement
+    const _ctx CanvasRenderingContext2D
+    const _onDraw fn()
+
+    const _mouseBehaviorManager = MouseBehaviorManager.new
+
+    # onDraw will be called whenever the user draws something in the canvas.
+    # Useful since we want to re-compute the Voronoi diagram of the canvas
+    # every time the user draws.
+    def new(inputCanvas HTMLCanvasElement, outputCanvas HTMLCanvasElement, onDraw fn()) {
+        _inputCanvas = inputCanvas
+        _outputCanvas = outputCanvas
+        _onDraw = onDraw
+
+        _ctx = _inputCanvas.getContext2D
+        _ctx.scale(Browser.powerOfTwoLessThanDevicePixelRatio, Browser.powerOfTwoLessThanDevicePixelRatio)
+
+        _mouseBehaviorManager.listenOnElement(_inputCanvas)
+        _mouseBehaviorManager.listenOnElement(_outputCanvas)
+
+        _mouseBehaviorManager.onDown((e MouseEvent) => {
+            if e.target == _inputCanvas || e.target == _outputCanvas {
+                _changeColorAndDraw(e.location)
+            }
+        })
+
+        _mouseBehaviorManager.onMove((e MouseEvent) => {
+            if e.isDown {
+                _changeColorAndDraw(e.location)
+            }
+        })
+
+        const canvasRect = _inputCanvas.getBoundingClientRect
+        _changeColorAndDraw(Vector.new(canvasRect.width / 2, canvasRect.height / 2))
+    }
+
+    def _changeColorAndDraw(point Vector) {
+        const canvasRect = _inputCanvas.getBoundingClientRect
+
+        if point.x > 0 && point.y > 0 && point.x < canvasRect.width && point.y < canvasRect.height {
+            _ctx.beginPath
+            _ctx.rect(
+                (point.x - dotRadius) as int,
+                (point.y - dotRadius) as int,
+                dotRadius * 2,
+                dotRadius * 2
+            )
+            _ctx.fillStyle = Color.randomPurple.toCSS
+            _ctx.fill
+            if _onDraw != null {
+                _onDraw()
+            }
+        }
+    }
+}

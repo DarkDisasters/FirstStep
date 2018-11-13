@@ -1,0 +1,50 @@
+enum UpdateType {
+    CHANGE
+    COMMIT
+}
+
+class DragBehavior :: MouseBehavior {
+    # Where the last drag started
+    var _dragStart Vector = null
+
+    # The current offset from _dragStart
+    var offset Vector = Vector.new(0, 0)
+
+    # Called while dragging with .CHANGE and at the end of a
+    # drag with .COMMIT
+    var onUpdate fn(UpdateType) = null
+
+    def down(e MouseEvent) {
+        _setCursorMove(e.target, true)
+        _dragStart = e.location
+        _update(e.location, .CHANGE)
+    }
+
+    def move(e MouseEvent) {
+        _setCursorMove(e.target, e.isDown)
+        if _dragStart != null {
+            _update(e.location, .CHANGE)
+        }
+    }
+
+    def up(e MouseEvent) {
+        if _dragStart != null {
+            _update(e.location, .COMMIT)
+            _dragStart = null
+        }
+        _setCursorMove(e.target, false)
+    }
+
+    def _update(eventLocation Vector, type UpdateType) {
+        assert(_dragStart != null)
+        offset = eventLocation - _dragStart
+
+        if onUpdate != null {
+            onUpdate(type)
+        }
+    }
+
+    def _setCursorMove(element HTMLElement, setMove bool) {
+        element.style.cursor = setMove ? "move" : null
+    }
+}

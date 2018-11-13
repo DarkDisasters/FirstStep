@@ -1,0 +1,338 @@
+
+class DrawSeedMouseBehavior :: MouseBehavior {
+    var _controller PhotoDemoController
+
+    def down(e MouseEvent) {
+        e.stopPropagation
+        _controller.drawAtPoint(e.location)
+        _controller.onDraw(_controller)
+    }
+
+    def move(e MouseEvent) {
+        if e.isDown {
+            _controller.drawAtPoint(e.location)
+            _controller.onDraw(_controller)
+        }
+        e.stopPropagation
+    }
+
+    def up(e MouseEvent) {
+        _controller.drawAtPoint(e.location)
+        _controller.onDraw(_controller)
+        e.stopPropagation
+    }
+}
+
+
+###############################################################################################
+
+
+namespace SeedSpiralMouseBehavior {
+    enum DragType {
+        CENTER
+        HANDLE
+    }
+
+    class DragContext {
+        var type DragType
+    }
+}
+
+namespace SeedSpiralMouseBehavior {
+    const centerRadius = 6
+    const handleRadius = 4
+    const clickBlur = 6
+    const initialCenterHandleDistance = 50.0
+}
+
+class SeedSpiralMouseBehavior :: MouseBehavior {
+    var _controller PhotoDemoController
+
+    var _relativeSeedLocations List<Vector> = []
+
+    var _dragContext DragContext = null
+
+    # Locations in HTML space
+    var _handle Vector = Vector.new(0, 0)
+    var _center Vector = Vector.new(0, 0)
+    var _lastKnownMouse = Vector.new(0, 0)
+
+    def new(controller PhotoDemoController) {
+        _controller = controller
+
+        const canvasElementRect = (_controller.inputCanvas as HTMLElement).getBoundingClientRect
+        const canvasElementSize = Vector.new(canvasElementRect.width, canvasElementRect.height)
+
+        _center = Vector.new(
+            canvasElementSize.x / 2,
+            canvasElementSize.y / 2
+        )
+
+        # Position the handle above the center
+        _handle = _center.clone
+        _handle.y -= initialCenterHandleDistance
+
+        for radiusIndex = 0; radiusIndex < 20; radiusIndex++ {
+            # Need more and more points as we get further out
+            const numPoints = 10
+
+            # Radius gets bigger as we get further out
+            const radius = radiusIndex * radiusIndex
+
+            for i = 0.0; i < numPoints; i++ {
+                var x = radius * Math.cos((i / numPoints) * Math.PI * 2)
+                var y = radius * Math.sin((i / numPoints) * Math.PI * 2)
+
+                x += Math.random * 30 - 15
+                y += Math.random * 30 - 15
+
+                _relativeSeedLocations.append(Vector.new(x, y))
+            }
+        }
+
+        _render
+    }
+
+    def _render {
+        # Clear the controller so we can start drawing
+        _controller.clearSeedCanvas
+
+        # Draw the new seeds via the controller
+        const angle = (_handle - _center).toAngleRad
+        for seedLocation in _relativeSeedLocations {
+            var location = seedLocation.clone
+
+            # Scale according to how far handle is from center
+            location *= Math.max(
+                (_center.distanceTo(_handle) / initialCenterHandleDistance) * 2.0,
+                0.5
+            )
+
+            # Rotate by the angle between _center and _handle
+            location = location.rotated(angle)
+
+            # Move according to where the center is
+            location += _center
+
+            _drawIfOnCanvas(location)
+        }
+
+        _drawHandleAndCenter
+        _controller.onDraw(_controller)
+    }
+
+    def _drawHandleAndCenter {
+        const ctx = _controller.inputContext
+        const canvasHandle = _handle
+        const canvasCenter = _center
+
+        # Draw line between the center and anchor
+        ctx.beginPath
+        ctx.lineWidth = 1
+        ctx.moveTo(canvasHandle.x as int, canvasHandle.y as int)
+        ctx.lineTo(canvasCenter.x as int, canvasCenter.y as int)
+        ctx.strokeStyle = "#A5A3A3"
+        ctx.stroke
+
+        # Figure out hover state
+        const normalColor = "#46C9FF"
+        const hoverColor = "#ACE7FF"
+        const downColor = "#0F86B7"
+
+        var centerColor = normalColor
+        var handleColor = normalColor
+        if _lastKnownMouse.distanceTo(_handle) < handleRadius + clickBlur {
+            handleColor = _dragContext != null ? downColor : hoverColor
+        } else if _lastKnownMouse.distanceTo(_center) < centerRadius + clickBlur {
+            centerColor = _dragContext != null ? downColor : hoverColor
+        }
+
+        # Draw the center
+        ctx.beginPath
+        ctx.arc(canvasCenter.x, canvasCenter.y, centerRadius, 0, Math.PI * 2)
+        ctx.fillStyle = "#FFF"
+        ctx.fill
+        ctx.lineWidth = 2
+        ctx.strokeStyle = centerColor
+        ctx.stroke
+
+        # Draw the anchor
+
+        const topLeft = canvasHandle - handleRadius
+        ctx.beginPath
+        ctx.rect(topLeft.x, topLeft.y, handleRadius * 2, handleRadius * 2)
+        ctx.fillStyle = "#FFF"
+        ctx.fill
+        ctx.lineWidth = 2
+        ctx.strokeStyle = handleColor
+        ctx.stroke
+    }
+
+    def _onMove(e MouseEvent) {
+        switch _dragContext.type {
+            case DragType.CENTER {
+                # Move both handle and center
+                const handleRelativeToCenter = _handle - _center
+                _center = e.location
+                _handle = _center + handleRelativeToCenter
+            }
+            case DragType.HANDLE {
+                # Move just the handle
+                _handle = e.location
+            }
+        }
+
+        _render
+    }
+
+    def down(e MouseEvent) {
+        _lastKnownMouse = e.location
+
+        const mouseDown = e.location
+        if _handle.distanceTo(mouseDown) < _center.distanceTo(mouseDown) {
+            _dragContext = DragContext.new(DragType.HANDLE)
+        } else {
+            _dragContext = DragContext.new(DragType.CENTER)
+        }
+
+        e.stopPropagation
+        _onMove(e)
+    }
+
+    def move(e MouseEvent) {
+        _lastKnownMouse = e.location
+        if _dragContext != null {
+            _onMove(e)
+        } else {
+            # Just re-draw handle and center since their hover state
+            # might have changed
+            _drawHandleAndCenter
+        }
+        e.stopPropagation
+    }
+
+    def up(e MouseEvent) {
+        _controller.drawAtPoint(e.location)
+        _dragContext = null
+        _lastKnownMouse = e.location
+        _drawHandleAndCenter
+        e.stopPropagation
+    }
+
+    def _drawIfOnCanvas(point Vector) {
+        const maxWidth = _controller.inputCanvas.getBoundingClientRect.width
+        if point.x > 0 && point.y > 0 && point.x < maxWidth && point.y < maxWidth {
+            _controller.drawAtPoint(point)
+        }
+    }
+}
+
+
+###############################################################################################
+
+
+class PhotoDemoController {
+    # Canvas that user sees
+    const inputCanvas HTMLCanvasElement
+    const outputCanvas HTMLCanvasElement
+    const inputContext CanvasRenderingContext2D
+
+    # Canvas that isn't displayed to user. We pass this to the
+    # Voronoi generator.
+    const _seedCanvas HTMLCanvasElement
+    const _seedCtx CanvasRenderingContext2D
+
+    # Cached for performance since we use these on every draw
+    const sourceImg HTMLImageElement
+    const sourcePattern CanvasPattern
+
+    # Set by someone else to hear when we draw
+    const onDraw fn(PhotoDemoController)
+
+    const _mouseBehaviorManager = MouseBehaviorManager.new
+
+    def new(
+            inputCanvas_ HTMLCanvasElement,
+            outputCanvas_ HTMLCanvasElement,
+            sourceImage_ HTMLImageElement,
+            onDraw_ fn(PhotoDemoController)
+        ) {
+        inputCanvas = inputCanvas_
+        outputCanvas = outputCanvas_
+        sourceImg = sourceImage_
+        onDraw = onDraw_
+
+        _mouseBehaviorManager.listenOnElement(inputCanvas)
+        _mouseBehaviorManager.listenOnElement(outputCanvas)
+
+        inputContext = inputCanvas.getContext2D
+        inputContext.scale(Browser.powerOfTwoLessThanDevicePixelRatio, Browser.powerOfTwoLessThanDevicePixelRatio)
+
+        _seedCanvas = document.createElement("canvas") as HTMLCanvasElement
+        _seedCtx = _seedCanvas.getContext2D
+        _seedCanvas.width = inputCanvas.width
+        _seedCanvas.height = inputCanvas.height
+        # Do not scale the _seedCanvas. We want to be able to draw 1px blocks on it.
+
+        const patternCanvas = document.createElement("canvas") as HTMLCanvasElement
+        patternCanvas.width = _seedCanvas.width
+        patternCanvas.height = _seedCanvas.height
+        patternCanvas.getContext2D.drawImage(
+            sourceImg,
+            0, 0, sourceImg.naturalWidth, sourceImg.naturalHeight,
+            0, 0, patternCanvas.width, patternCanvas.height
+        )
+        sourcePattern = _seedCtx.createPattern(patternCanvas, "repeat")
+
+        #_mouseBehaviorManager.register(DrawSeedMouseBehavior.new(self))
+        _mouseBehaviorManager.register(SeedSpiralMouseBehavior.new(self))
+    }
+
+    def seedCanvas HTMLCanvasElement { return _seedCanvas }
+
+    def _drawAtPoint(ctx CanvasRenderingContext2D, point Vector, fillStyle string, size int) {
+        ctx.fillStyle = fillStyle
+        _drawAtPoint(ctx, point, size)
+    }
+
+    def _drawAtPoint(ctx CanvasRenderingContext2D, point Vector, fillStyle CanvasPattern, size int) {
+        ctx.fillStyle = fillStyle
+        _drawAtPoint(ctx, point, size)
+    }
+
+    def _drawAtPoint(ctx CanvasRenderingContext2D, point Vector, size int) {
+        ctx.beginPath
+        ctx.rect(
+            point.x as int,
+            point.y as int,
+            size,
+            size
+        )
+        ctx.fill
+    }
+
+    # Called by mouse behaviors
+
+    def clearSeedCanvas {
+        const rect = inputCanvas.getBoundingClientRect
+        inputContext.clearRect(0, 0, rect.width, rect.height)
+        _seedCtx.clearRect(0, 0, _seedCanvas.width, _seedCanvas.height)
+    }
+
+    def drawAtPoint(point Vector) {
+        _drawAtPoint(inputContext, point, "rgba(255, 255, 255, 0.7)", 2)
+
+        # Pin the sourceImage pixels down onto the seed canvas
+        # where the user is drawing
+
+        _seedCtx.fillStyle = sourcePattern
+        _seedCtx.beginPath
+        _seedCtx.rect(
+            (point.x * Browser.powerOfTwoLessThanDevicePixelRatio) as int,
+            (point.y * Browser.powerOfTwoLessThanDevicePixelRatio) as int,
+            1,
+            1
+        )
+        _seedCtx.fill
+    }
+}

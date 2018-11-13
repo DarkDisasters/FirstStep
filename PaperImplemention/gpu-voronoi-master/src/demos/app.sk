@@ -1,0 +1,319 @@
+def gridSize int {
+    return 256
+}
+
+def sizeCanvas(canvas HTMLCanvasElement, size int) {
+    canvas.width = size * Browser.powerOfTwoLessThanDevicePixelRatio
+    canvas.height = size * Browser.powerOfTwoLessThanDevicePixelRatio
+    canvas.style.width = "\(size)px"
+    canvas.style.height = "\(size)px"
+}
+
+def sizeCanvas(canvas canvas, size int) canvas {
+    canvas.width = size * Browser.powerOfTwoLessThanDevicePixelRatio
+    canvas.height = size * Browser.powerOfTwoLessThanDevicePixelRatio
+    canvas.style.width = "\(size)px"
+    canvas.style.height = "\(size)px"
+    return canvas
+}
+
+def getCanvas(container HTMLElement, className string, canvasSize int) HTMLCanvasElement {
+    const canvas = (container as dynamic).getElementsByClassName(className)[0] as HTMLCanvasElement
+    sizeCanvas(canvas, canvasSize)
+    return canvas
+}
+
+def displayError(container HTMLElement) {
+    container.innerHTML = ""
+
+    const errorStyle Style = {
+        "text-align": "center",
+        "margin": "40px auto",
+        "background-color": "#FCFFD3",
+        "padding": "40px",
+        "font-family": "Helvetica",
+        "line-height": "40px"
+    }
+
+    container.appendChild((
+        <div class="caps" style=errorStyle> # bold?
+            "Demo disabled. Couldn't start WebGL."
+        </div>
+    ).rawElement)
+}
+
+def tryOrDisplayError(container HTMLElement, tryBlock fn()) {
+    try {
+        tryBlock()
+    } catch temp dynamic {
+        displayError(container)
+    }
+}
+
+const defaultLabelStyle Style = {
+    "font-family": "'Lucida Grande', 'Lucida Sans Unicode', 'Lucida Sans', Geneva, Verdana, sans-serif"
+}
+
+const demoContainerStyle Style = {
+    "text-align": "center",
+    "margin": "40px auto"
+}
+
+const inputCanvasStyle Style = {
+    "background-color": "#F5F5F5"
+}
+
+def initializePaintDemo(container HTMLElement) {
+    const inputCanvas = sizeCanvas(<canvas style=inputCanvasStyle />, gridSize)
+    const outputCanvas = sizeCanvas(<canvas />, gridSize)
+    container.appendChild((
+        <div style=demoContainerStyle>
+            inputCanvas
+            outputCanvas
+        </div>
+    ).rawElement)
+
+    var jfa JumpFlood = null
+    tryOrDisplayError(container, => {
+        jfa = JumpFlood.new(outputCanvas.element)
+    })
+
+    if jfa != null {
+        CanvasDrawController.new(inputCanvas.element, outputCanvas.element, => {
+            jfa.computeAndDraw(inputCanvas.element)
+        })
+    }
+}
+
+def initializeFishDemo(container HTMLElement) {
+    const inputCanvas = sizeCanvas(<canvas style=inputCanvasStyle />, gridSize)
+    const outputCanvas = sizeCanvas(<canvas />, gridSize)
+    container.appendChild((
+        <div style=demoContainerStyle>
+            inputCanvas
+            outputCanvas
+        </div>
+    ).rawElement)
+
+    var jfa JumpFlood = null
+    tryOrDisplayError(container, => {
+        jfa = JumpFlood.new(outputCanvas.element)
+    })
+
+    if jfa != null {
+        FishGameController.new(inputCanvas.element, outputCanvas.element, => {
+            const opts = JumpFlood.Options.new
+            opts.wrap = true
+            jfa.computeAndDraw(inputCanvas.element, opts)
+        })
+    }
+}
+
+def initializePhotoDemo(container HTMLElement) {
+    const inputCanvasStyle Style = {
+        "width": "100%",
+        "height": "100%",
+        "position": "absolute",
+        "top": "0",
+        "left": "0"
+    }
+
+    const inputCanvas = sizeCanvas(<canvas style=inputCanvasStyle />, gridSize)
+    const image = <img id="eye" src="/images/eye.jpg" style=inputCanvasStyle />
+    const outputCanvas = sizeCanvas(<canvas />, gridSize)
+
+    container.appendChild((
+        <div style=demoContainerStyle>
+            <div style={ "display": "inline-block", "position": "relative", "width": "\(gridSize)px", "height": "\(gridSize)px" }>
+                image
+                inputCanvas
+            </div>
+            outputCanvas
+        </div>
+    ).rawElement)
+
+    var jfa JumpFlood = null
+    tryOrDisplayError(container, => {
+        jfa = JumpFlood.new(outputCanvas.element)
+    })
+
+    if jfa != null {
+        image.onload = => {
+            PhotoDemoController.new(inputCanvas.element, outputCanvas.element, image.element, (photoController PhotoDemoController) => {
+                jfa.computeAndDraw(photoController.seedCanvas)
+            })
+        }
+    }
+}
+
+def initializeJfaPatternDemo(container HTMLElement) {
+    const patternLabelStyle Style = {
+        "margin-top": "20px",
+        "display": "block",
+        "margin": "20px auto"
+    }
+    patternLabelStyle.take(defaultLabelStyle)
+
+    const patternSliderStyle Style = {
+        "width": "226px",
+        "display": "inline-block"
+    }
+
+    const patternCanvas = sizeCanvas(<canvas />, gridSize)
+    const label = <div style=patternLabelStyle />
+    const slider = <div style=patternSliderStyle />
+    container.appendChild((
+        <div style=demoContainerStyle>
+            patternCanvas
+            label
+            slider
+        </div>
+    ).rawElement)
+
+    const demoGridSize = 16
+    const logicalCanvasSize = gridSize
+    JFAPatternDemoController.new(patternCanvas.element, logicalCanvasSize, demoGridSize, label.rawElement, slider.rawElement)
+}
+
+def initializeSliderDemo(container HTMLElement) {
+    const sliderLabelStyle Style = {
+        "display": "inline-block",
+        "text-align": "center",
+        "width": "\(gridSize)px",
+        "margin-bottom": "20px",
+    }
+    sliderLabelStyle.take(defaultLabelStyle)
+
+    const content = (
+        <div style=demoContainerStyle>
+            sizeCanvas(<canvas class="input-canvas" style=inputCanvasStyle />, gridSize)
+            sizeCanvas(<canvas class="output-canvas" />, gridSize)
+            <div style={ "margin-top": "20px" }>
+                <div class="label" style=sliderLabelStyle />
+                <div class="slider" style={ "width": "226px", "display": "inline-block" } />
+            </div>
+        </div>
+    )
+
+    container.appendChild(content.rawElement)
+
+    SlidableMaxJFARoundDemoController.new(
+        content.findDescendentByClassName("input-canvas").rawElement as HTMLCanvasElement,
+        content.findDescendentByClassName("output-canvas").rawElement as HTMLCanvasElement,
+        gridSize,
+        content.findDescendentByClassName("label").rawElement,
+        content.findDescendentByClassName("slider").rawElement,
+        => { displayError(container) }
+    )
+}
+
+def initializeDistanceDemo(container HTMLElement) {
+    const inputCanvas = sizeCanvas(<canvas style=inputCanvasStyle />, gridSize)
+    const outputCanvas = sizeCanvas(<canvas />, gridSize)
+    container.appendChild((
+        <div style=demoContainerStyle>
+            inputCanvas
+            outputCanvas
+        </div>
+    ).rawElement)
+
+    var jfa JumpFlood = null
+    tryOrDisplayError(container, => {
+        jfa = JumpFlood.new(outputCanvas.element)
+    })
+
+    if jfa != null {
+        FishGameController.new(inputCanvas.element, outputCanvas.element, => {
+            const opts = JumpFlood.Options.new
+            opts.wrap = true
+            opts.output = .DISTANCE_FIELD
+            jfa.computeAndDraw(inputCanvas.element, opts)
+        })
+    }
+}
+
+def initializeShadowDemo(container HTMLElement) {
+    const labelStyle Style = {
+        "display": "inline-block",
+        "text-align": "right",
+        "width": "55px",
+        "margin-right": "40px"
+    }
+    labelStyle.take(defaultLabelStyle)
+
+    const sliderStyle Style = {
+        "display": "inline-block",
+        "width": "226px"
+    }
+
+    const controlsContainerStyle Style = { "margin": "20px auto" }
+    const content = (
+        <div style=demoContainerStyle>
+            sizeCanvas(<canvas class="output-canvas" />, gridSize)
+            <div style=controlsContainerStyle>
+                <span style=labelStyle>"Spread"</span>
+                <div class="spread-slider" style=sliderStyle />
+            </div>
+            <div style=controlsContainerStyle>
+                <span style=labelStyle>"Blur"</span>
+                <div class="blur-slider" style=sliderStyle />
+            </div>
+        </div>
+    )
+    container.appendChild(content.rawElement)
+
+    const outputCanvas = content.findDescendentByClassName("output-canvas").rawElement as HTMLCanvasElement
+    outputCanvas.getContext2D.scale(Browser.powerOfTwoLessThanDevicePixelRatio, Browser.powerOfTwoLessThanDevicePixelRatio)
+    ShadowDemoController.new(
+        container,
+        gridSize,
+        outputCanvas,
+        content.findDescendentByClassName("spread-slider").rawElement,
+        content.findDescendentByClassName("blur-slider").rawElement
+    )
+}
+
+def initializeGridDemo(container HTMLElement) {
+    const inputCanvas = sizeCanvas(<canvas style=inputCanvasStyle />, gridSize)
+    const outputCanvas = sizeCanvas(<canvas />, gridSize)
+    container.appendChild((
+        <div style=demoContainerStyle>
+            inputCanvas
+            outputCanvas
+        </div>
+    ).rawElement)
+
+    var jfa JumpFlood = null
+    tryOrDisplayError(container, => {
+        jfa = JumpFlood.new(outputCanvas.element)
+    })
+
+    if jfa != null {
+        const opts = JumpFlood.Options.new
+        opts.wrap = true
+        GridDemoController.new(inputCanvas.element, outputCanvas.element, => {
+            jfa.computeAndDraw(inputCanvas.element, opts)
+        })
+    }
+}
+
+def getContainer(id string) HTMLElement {
+    const container = document.getElementById(id)
+    (container as dynamic).removeAttribute("style")
+    return container
+}
+
+@entry
+def main {
+    window.addEventListener("load", => {
+        initializePaintDemo(getContainer("paint-demo-container"))
+        initializeFishDemo(getContainer("fish-demo-container"))
+        initializePhotoDemo(getContainer("photo-demo-container"))
+        initializeJfaPatternDemo(getContainer("jfa-pattern-demo-container"))
+        initializeSliderDemo(getContainer("slider-demo-container"))
+        initializeDistanceDemo(getContainer("distance-demo-container"))
+        initializeShadowDemo(getContainer("shadow-demo-container"))
+        initializeGridDemo(getContainer("grid-demo-container"))
+    })
+}
+

@@ -1,0 +1,90 @@
+
+namespace DraggableTextDemoController {
+    const text = "Voronoi"
+    const textSizePx = 60
+
+    def drawTextCanvas HTMLCanvasElement {
+        const canvas = document.createElement("canvas") as HTMLCanvasElement
+        const ctx = canvas.getContext2D
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+        ctx.font = "\(textSizePx)px Baskerville"
+
+        const width = ctx.measureText(text).width
+        canvas.width = (Math.round(width) * Browser.powerOfTwoLessThanDevicePixelRatio) as int
+        canvas.height = textSizePx * Browser.powerOfTwoLessThanDevicePixelRatio
+        ctx.scale(Browser.powerOfTwoLessThanDevicePixelRatio, Browser.powerOfTwoLessThanDevicePixelRatio)
+
+        ctx.font = "\(textSizePx)px Baskerville"
+        ctx.fillStyle = "#333"
+        ctx.textBaseline = "hanging"
+        ctx.fillText(text, 0, 0)
+        return canvas
+    }
+}
+
+class DraggableTextDemoController {
+    const _textCanvas HTMLCanvasElement
+
+    const _inputCanvas HTMLCanvasElement
+    const _outputCanvas HTMLCanvasElement
+    const _ctx CanvasRenderingContext2D
+    const _logicalCanvasSize int
+    const _mouseBehaviorManager = MouseBehaviorManager.new
+    const center Vector
+
+    const dragBehavior DragBehavior
+    var lastKnownOffset Vector
+    var onDraw fn()
+
+    def new(inputCanvas HTMLCanvasElement, outputCanvas HTMLCanvasElement) {
+        _inputCanvas = inputCanvas
+        _outputCanvas = outputCanvas
+
+        _textCanvas = drawTextCanvas
+        _ctx = _inputCanvas.getContext2D
+        _ctx.scale(Browser.powerOfTwoLessThanDevicePixelRatio, Browser.powerOfTwoLessThanDevicePixelRatio)
+        _logicalCanvasSize = outputCanvas.getBoundingClientRect.width
+
+        # Figure out the width of the text and set _lastKnownOffset so that the text
+        # is centered in the canvas
+        const halfCanvas = Vector.new(_outputCanvas.width, _outputCanvas.height) / 2
+        const halfTextSize = Vector.new(_textCanvas.width, _textCanvas.height) / 2
+        center = (halfCanvas - halfTextSize) / Browser.powerOfTwoLessThanDevicePixelRatio
+        lastKnownOffset = center.clone
+
+        _mouseBehaviorManager.listenOnElement(_inputCanvas)
+        _mouseBehaviorManager.listenOnElement(_outputCanvas)
+
+        dragBehavior = DragBehavior.new
+        dragBehavior.onUpdate = (type UpdateType) => {
+            switch type {
+                case .CHANGE {
+                    render(lastKnownOffset + dragBehavior.offset)
+                }
+                case .COMMIT {
+                    lastKnownOffset += dragBehavior.offset
+                    render(lastKnownOffset)
+                }
+            }
+        }
+
+        _mouseBehaviorManager.register(dragBehavior)
+        render(center)
+    }
+
+    def render(offset Vector) {
+        _ctx.fillStyle = "white"
+        _ctx.fillRect(0, 0, _logicalCanvasSize, _logicalCanvasSize)
+        drawTextToContext(_ctx, offset)
+
+        if onDraw != null {
+            onDraw()
+        }
+    }
+
+    def drawTextToContext(ctx CanvasRenderingContext2D, offset Vector) {
+        ctx.drawImage(_textCanvas, offset.x, offset.y, _textCanvas.width / Browser.powerOfTwoLessThanDevicePixelRatio, _textCanvas.height / Browser.powerOfTwoLessThanDevicePixelRatio)
+    }
+}
