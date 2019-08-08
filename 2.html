@@ -5,7 +5,6 @@
     </head>
     <body> 
         <canvas id = "myCanvas" width="1700" height="1000" style=" border:1px solid #c3c3c3;"></canvas>
-       
         <div id="coverdiv" style= 'float:right' >
             <button id="g_accelerated_speed" >Deformation</button>
         </div>
@@ -15,65 +14,50 @@
                 this.x = x
                 this.y = y
                 this.radius = radius
-                // return this;
             }
             var volecityFirst,volecityLast
             var count = 1
             var preTime = undefined
             var preX,preY = 0
             var previousCircle
-            var isDragging = false     
+            //var isDragging = false     
             var canvas = document.getElementById('myCanvas')
             var ctx = canvas.getContext("2d")
             var m_deformation = document.getElementById('g_accelerated_speed')
-            m_deformation.addEventListener('click', deformationDot)
+            m_deformation.addEventListener('mousemove', deformationDot)
             function deformationDot(){
-                canvas.onmousedown = canvasClick
-                canvas.onmouseup = stopDragging
-                canvas.onmouseout = stopDragging
+                //canvas.onmousedown = canvasClick
+                //canvas.onmouseup = stopDragging
+                //canvas.onmouseout = stopDragging
                 canvas.onmousemove = dragCircle
 
-                function canvasClick(e){ 
+                /*function canvasClick(e){ 
                     var radius = 10 
                     clickX = e.clientX
                     clickY = e.clientY
-                    console.log(" clickX, clickY ", clickX, clickY);
                     drawCircles(clickX,clickY,radius)
                     //previousCircle = circle
                     isDragging = true
                     console.log('FirstXY',clickX,clickY)
                 }
-
-                function stopDragging(){
-                    isDragging = false
-                    console.log(' clear canvas.width, canvas.height ',  canvas.width, canvas.height)
-                    // ctx.clearRect(0, 0, canvas.width, canvas.height)
-                }
+*/
+             
 
                 function drawCircles(CircleX,CircleY,CircleRadius){
-
                     ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-                    console.log(' clear canvas.width, canvas.height ',  canvas.width, canvas.height)
-
-                    var circle = new Circle(CircleX,CircleY,CircleRadius)  
-                    //LM++  
-                    ctx.beginPath()       
-                    
+                    circle = new Circle(CircleX,CircleY,CircleRadius)           
                     ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI*2)
                     //console.log('后一个',LastX,LastY)
                     //ctx.lineWidth = 5
-                    ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'
-                   // ctx.stroke()
+                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)'
+                    //ctx.stroke()
                     ctx.closePath()
                     ctx.fill()
                     
                 }
 
                 function dragCircle(e){
-                    if (isDragging == true){
                         var currentTime = Date.now()
-                        var addVolecity 
                         var addVolecity = 1
                         if(typeof preTime != "undefined"){
                             var MoveX = e.pageX - preX
@@ -104,7 +88,7 @@
                         preTime = currentTime
                         //volecityFirst = 0
                         
-                    }
+                    
                     
                 }
             }                

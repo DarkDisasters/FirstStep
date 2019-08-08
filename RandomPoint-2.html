@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+    </head>
+    <body> 
+        <canvas id = "myCanvas" width="1700" height="1000" style=" background-color: #c3c3c3;"></canvas>
+       
+        <div id="coverdiv" style= 'float:right' >
+            <button id="g_accelerated_speed" >Deformation</button>
+        </div>
+
+        <script >
+            
+            var volecityFirst,volecityLast
+            var circles = []
+            //var circles = new Array([10])
+            var addSpeedGet = []
+            var colorArray = ['red','orange','yellow','green','cyan','blue','purple']
+            var m_color
+            var count = 1
+            var preTime = undefined
+            var preX,preY = 0
+            var isDragging = false     
+            var canvas = document.getElementById('myCanvas')
+            var ctx = canvas.getContext("2d")
+            var m_deformation = document.getElementById('g_accelerated_speed')
+            m_deformation.addEventListener('click', deformationDot)
+
+            function Circle(x,y,radius,color){
+                this.x = x
+                this.y = y
+                this.radius = radius
+                this.color = color
+            }
+
+            function deformationDot(){
+                canvas.onmousedown = canvasClick
+                canvas.onmouseup = stopDragging
+                canvas.onmouseout = stopDragging
+                canvas.onmousemove = dragCircle
+
+                function canvasClick(e){ 
+                    var radius = 10 
+                    clickX = e.clientX - canvas.offsetLeft
+                    clickY = e.clientY - canvas.offsetTop
+                    isDragging = true
+                    m_color = colorArray[Math.floor(Math.random()*7)]
+
+                    var circle1 = new Circle(clickX,clickY,radius,m_color)
+                    circles.push(circle1)
+                    if(circles.length > 10){
+                        for(var i = 0; i < circles.length; ++i){
+                            circles[i] = circles[i+1]   
+                        }
+                        circles.pop(10)
+                    }
+                    drawCircles()
+                    //console.log('color',m_color)
+                    console.log('FirstXY',clickX,clickY)
+
+                   
+                }
+
+                function stopDragging(){
+                    isDragging = false
+                }
+
+                function drawCircles(){
+                    ctx.clearRect(0, 0, canvas.width, canvas.height)  
+                    for(var i = 0; i < circles.length; i++){  
+                        //var d_circle = circles[i]
+                        ctx.beginPath() 
+                        ctx.arc(circles[i].x, circles[i].y, circles[i].radius, 0, Math.PI*2)
+                        //console.log('后一个',LastX,LastY)
+                        //ctx.lineWidth = 5
+                        ctx.fillStyle = circles[i].color
+                       // ctx.stroke()
+                        ctx.closePath()
+                        ctx.fill()    
+                    }
+                    //console.log('circles',circles)
+                    
+                }
+                
+                /*
+                此为在网上找到的代码，正在理解
+                 */
+                function upData(){
+                    uX = Math.floor(Math.random()*7+1)
+                    uY = Math.floor(Math.random()*7+1)
+                    uR = Math.floor(Math.random()*7+1)
+                    for(var i =0; i < circles.length; i++){
+                        circles[i].x += uX
+                        circles[i].y += uY
+                        circles[i].radius -= uR
+                        if(circles[i].radius < 0) 
+                            circles[i].radius=0
+                    }
+                }
+
+                setInterval(function(){
+                    drawCircles()
+                    upData()
+                }, 100)
+
+
+
+                function dragCircle(e){
+                    if (isDragging == true){
+                        var currentTime = Date.now()
+                        var addVolecity 
+                        var addVolecity = 1
+                        if(typeof preTime != "undefined"){
+                            var x = e.pageX - canvas.offsetLeft
+                            var y = e.pageY - canvas.offsetTop
+                            var MoveX = e.pageX - preX
+                            var MoveY = e.pageY - preY
+                            var time = currentTime - preTime
+                            var volecityX = MoveX/time
+                            var volecityY = MoveY/time
+                            volecityLast = Math.sqrt(volecityX*volecityX + volecityY*volecityY)
+                            if(count != 1 ){
+                                addVolecity = (volecityLast - volecityFirst) / time
+                                addSpeedGet.push(addVolecity)
+                                console.log('加速度Array',addSpeedGet)
+                                console.log('计算所得加速度',addVolecity)
+                                //var volecityFirst = volecityLast    
+                            }       
+                            volecityFirst = volecityLast 
+                            count = 2       
+                            if(addVolecity > 0){
+                                addVolecity = addVolecity * 10
+                            }else if(addVolecity <= 0){  
+                                addVolecity = 0.5
+                            }
+                            m_color = colorArray[Math.floor(Math.random()*7)]
+                            console.log('process of drag',m_color)
+                            circles.push(new Circle(x,y,10*addVolecity,m_color))
+                            if(circles.length > 10){
+                                for(var i = 0; i < circles.length; ++i){
+                                    circles[i] = circles[i+1]   
+                                }
+                                circles.pop(10)
+                            }
+                            drawCircles()
+                            console.log('circles',circles)
+                            //console.log('volecityFirst',volecityFirst)
+                            //console.log('volecityLast',volecityLast)
+                            console.log('呈现的加速度', addVolecity)
+                        }
+                        preX = e.pageX
+                        preY = e.pageY
+                        preTime = currentTime
+                        //volecityFirst = 0
+                        
+                    }
+                    
+                }
+            }                
+            
+        </script>
+    </body>
+</html>

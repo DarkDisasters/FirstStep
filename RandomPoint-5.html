@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {
+                background-image: sz.png;
+                margin: 0px;
+                overflow: hidden;
+
+            }
+
+            #myCanvas {
+                background-image: url(sz.png);
+            }
+        </style>
+    </head>
+    <body> 
+        
+        <div id="coverdiv" style='position:absolute;top:0;left:0;width:1700px;height:1000px;pointer-events: none;'>
+            <svg id="coversvg" style="width:100%; height: 100%; "></svg>
+        </div>
+        <canvas id = "myCanvas" width="1700" height="1000" style=" background-color: #c3c3c3;"></canvas>
+        <div id="coverdiv" style= 'float:right' >
+            <button id="g_accelerated_speed" >Deformation</button>
+        </div>
+
+        <script >
+            var interpolateNumber
+            var velocityFirst,velocityLast
+            var i_addVelocityInterpolate
+            var circleRadius
+            var circleRadiusFirst
+            var circleRadiusLast
+            var count1 = 0
+            var count2 = 0
+            var count3 = 0
+            var count4 = 0
+            var count5 = 0
+            var count6 = 0
+            var count7 = 0 
+            var count8 = 0
+            var u_tempmax = 0
+            var u_tempmin = 100
+            var l_tempmax = -100
+            var l_tempmin = 0
+            var circles = []
+            //var circles = new Array([10])
+            var addSpeedGet = []
+            var interpolateCircleRadius = []
+            var colorArray = ['red','orange','yellow','green','cyan','blue','purple']
+            var m_color
+            var count = 1
+            var preTime = undefined
+            var preX,preY = 0
+            var isDragging = false     
+            var canvas = document.getElementById('myCanvas')
+            var ctx = canvas.getContext("2d")
+
+            var m_deformation = document.getElementById('g_accelerated_speed')
+            m_deformation.addEventListener('click', deformationDot)
+
+            function Circle(x,y,radius){
+                this.x = x
+                this.y = y
+                this.radius = radius
+                //this.color = color
+            }
+
+            function deformationDot(){
+                //canvas.onmousedown = canvasClick
+                //canvas.onmouseup = stopDragging
+                //canvas.onmouseout = stopDragging
+                canvas.onmousemove = dragCircle
+/*
+                function canvasClick(e){ 
+                    var radius = 30 
+                    clickX = e.pageX //- canvas.offsetLeft
+                    clickY = e.pageY //- canvas.offsetTop
+                    isDragging = true
+                    m_color = colorArray[Math.floor(Math.random()*7)]
+
+                    var circle1 = new Circle(clickX,clickY,radius,m_color)
+                    circles.push(circle1)
+                    if(circles.length > 10){
+                        for(var i = 0; i < circles.length; ++i){
+                            circles[i] = circles[i+1]   
+                        }
+                        circles.pop(10)
+                    }
+                    drawCircles()
+                    //console.log('color',m_color)
+                    console.log('FirstXY',clickX,clickY)
+
+                   
+                }
+
+                function stopDragging(){
+                    isDragging = false
+                }
+*/
+                function drawCircles(circleX,circleY,circleRadius){       
+                    ctx.clearRect(0, 0, canvas.width, canvas.height)  
+                //    for(var i = 0; i < circles.length; i++){  
+                        //var d_circle = circles[i]
+                    /*
+                    var picSZ = new Image()
+                    picSZ.onload = function(){
+                        draw(this)
+                    }
+                    picSZ.src = "sz.png"
+                    function draw(obj){
+                        ctx.drawImage(picSZ, 0, 0)
+                    }
+                    */
+                    ctx.beginPath() 
+                        
+                    ctx.arc(circleX, circleY, circleRadius, 0, Math.PI*2)
+                         
+                        //console.log('后一个',LastX,LastY)
+                        //ctx.lineWidth = 5
+                    ctx.strokeStyle = "#000000"//circles[i].color
+                    ctx.stroke()
+                    ctx.closePath()
+                        //ctx.fill() 
+                    /*   
+                    if(circleRadius = = 70){
+                        ctx.clearRect(0, 0, canvas.width, canvas.height)
+                    }
+                    */
+                }
+                    //console.log('circles',circles)
+                    
+                //}
+
+                
+                function upData(){ 
+                    uR = Math.floor(Math.random()*7+1)
+                    circles[i].radius -= uR
+                    if(circles[i].radius < 0) 
+                         circles[i].radius=0
+                    
+                }
+
+                setInterval(function(){
+                    //drawCircles()
+                    //upData()
+                    ctx.clearRect(0,0,canvas.width,canvas.height)
+                }, 500)
+
+                function calculate(addVelocity){
+                    if(addVelocity > 0){
+                        if(addVelocity > 1) count7++
+                        if(addVelocity > 0.1 && addVelocity < 1) count1++
+                        if(addVelocity > 0.01 && addVelocity < 0.1) count2 ++
+                        if(addVelocity < 0.01) count3++
+                        /*
+                        console.log('大于0.1的：',count1)   
+                        console.log('大于0.01，小于0.1的：',count2)
+
+                        console.log('小于0.01的：',count3)
+                        console.log('>1的：',count7)
+                        */
+                        if(addVelocity < u_tempmin)
+                            u_tempmin = addVelocity
+                        if(addVelocity > u_tempmax)
+                            u_tempmax = addVelocity
+                    }else if(addVelocity <= 0){
+                        if(addVelocity > -0.001) count4 ++
+                        if(addVelocity > -0.1 && addVelocity < 0.001) count5 ++
+                        if(addVelocity < -0.1 && addVelocity > -1) count6++
+                        if(addVelocity < -1) count8++
+                        /*
+                        console.log('大于-0.001的：',count4)
+                        console.log('大于-0.1，小于-0.001的：',count5)
+                        console.log('小于-0.1的：',count6)
+                        console.log('小于-1的：',count8)
+                        */
+                        if(addVelocity < l_tempmin)
+                            l_tempmin = addVelocity
+                        if(addVelocity > l_tempmax)
+                            l_tempmax = addVelocity
+                    }
+                }
+                function interpolateCal(former,later,n){
+                    for(var i = 1; i <= n; ++i){
+                        interpolateCircleRadius[i-1] = former + (later - former)*i/n
+                    }
+                }
+/*
+                function interpolateCal(former,later,i,j){
+                    interpolateCircleRadius[i] = former
+                    interpolateCircleRadius[j] = later
+                    if((i+j)/2 != i && (i+j)/2 != j){
+                        interpolateCircleRadius[(i+j)/2] = (former + later) / 2 +  (former + later) % 2
+                        interpolateCal(former,interpolateCircleRadius[2],0,(i+j)/2)
+                        interpolateCal(interpolateCircleRadius[2],later,(i+j)/2,4)
+                    }
+                }
+*/
+                
+                function secCalAddVelocity(firAddVelocity){
+                    var secAddVelocity,k
+                    switch(true){
+                        case firAddVelocity >= -0.005 && firAddVelocity <= 0.005 : 
+                            k = 4000
+                            secAddVelocity = k * firAddVelocity
+                            return secAddVelocity
+                            break
+
+                        case firAddVelocity > 0.005 && firAddVelocity <= 0.05 : 
+                            k = 600
+                            secAddVelocity = k * firAddVelocity + 17
+                            return secAddVelocity
+                            break
+
+                        case firAddVelocity > 0.05 && firAddVelocity <= 0.1 :
+                            k = 300
+                            secAddVelocity = k * firAddVelocity +  32
+                            return secAddVelocity
+                            break
+
+                        case firAddVelocity > 0.1 :
+                            k = 40
+                            secAddVelocity = k * firAddVelocity + 58
+                            return secAddVelocity
+                            break
+
+                        case firAddVelocity < -0.005 && firAddVelocity >= -0.05 :
+                            k = 600
+                            secAddVelocity = k * firAddVelocity - 17 
+                            return secAddVelocity
+                            break 
+
+                        case firAddVelocity < -0.05 && firAddVelocity >= -0.1 :
+                            k = 300 
+                            secAddVelocity = k * firAddVelocity - 32
+                            return secAddVelocity
+                            break
+                               
+                        case firAddVelocity < -0.1 :
+                            k = 40
+                            secAddVelocity = k * firAddVelocity - 58
+                            return secAddVelocity
+                            break
+
+                        default :
+                            console.log("XXXXXXXXXXXX错了")
+                    }
+                }
+
+                function nSelect(value){
+                    switch(true){
+                        case value >= -0.005 && value <= 0.005 :
+                            return 700
+                            break
+                        case value > 0.005 && value <= 0.05 :
+                            return 600
+                            break
+                        case value > 0.05 && value <= 0.1 :
+                            return 300
+                            break
+                        case value > 0.1 :
+                            return 100
+                            break
+
+                        case value < -0.005 && value >= -0.05 :
+                            return 600
+                            break
+                        case value < -0.05 && value >= -0.1 :
+                            return 300
+                            break
+                        case value < -0.1 :
+                            return 100
+                            break
+                        default :
+                            console.log("XXXXXXXXXXXX错了")
+                    }
+                }
+
+                function dragCircle(e){
+                    //if (isDragging == true){
+                        var currentTime = Date.now()
+                        var addVelocity = 0
+                        if(typeof preTime != "undefined"){
+                            var x = e.pageX - canvas.offsetLeft
+                            var y = e.pageY - canvas.offsetTop
+                            var MoveX = e.pageX - preX
+                            var MoveY = e.pageY - preY
+                            var time = currentTime - preTime
+                            var velocityX = MoveX/time
+                            var velocityY = MoveY/time
+                            velocityLast = Math.sqrt(velocityX*velocityX + velocityY*velocityY)
+                            if(count != 1 ){
+                                addVelocity = (velocityLast - velocityFirst) / time
+                                console.log("加速度：",addVelocity)
+                                addSpeedGet.push(addVelocity)
+                                calculate(addVelocity)
+                                /*
+                                console.log('最大正值',u_tempmax)
+                                console.log('最小正值',u_tempmin)
+                                console.log('最大负值',l_tempmax)
+                                console.log('最小负值',l_tempmin)
+                                console.log('本次计算所得加速度',addVelocity)
+                                console.log('全部加速度Array',addSpeedGet)
+                                */
+                                //var velocityFirst = velocityLast    
+                            }       
+                            velocityFirst = velocityLast 
+                            count = 2 
+
+                            i_addVelocity = secCalAddVelocity(addVelocity)
+                            //console.log("算后的加速度：",i_addVelocity)
+                            m_color = colorArray[Math.floor(Math.random()*7)]
+                            //console.log('process of drag',m_color)
+                            
+                            if(addVelocity > 0){
+                                circleRadius = 60 + i_addVelocity
+                                circleRadiusLast = circleRadius
+                                
+                                interpolateNumber = nSelect(addVelocity)
+
+                                interpolateCal(circleRadiusFirst,circleRadiusLast,interpolateNumber)
+
+                                circleRadiusFirst = circleRadius
+                                //drawCircles(x,y,interpolateCircleRadius)
+                               // console.log('插值圆半径正：',interpolateCircleRadius)
+                                
+                                
+                                for(var i =0; i < interpolateNumber; ++i){
+                                    drawCircles(x,y,interpolateCircleRadius[i]) 
+                                    console.log('第',i,'个插值的半径：',interpolateCircleRadius[i])  
+                                }
+                                drawCircles(x,y,circleRadius)
+                                console.log('圆半径正：',circleRadius)        
+                                //circles.push(new Circle(x,y,70 + i_addvelocity))
+                            }else if(addVelocity < 0){
+                                interPolateRadius = []
+                                circleRadius = 60 + i_addVelocity
+                                circleRadiusLast = circleRadius
+
+                                interpolateNumber = nSelect(addVelocity)
+
+                                interpolateCal(circleRadiusFirst,circleRadiusLast,interpolateNumber)
+
+                                circleRadiusFirst = circleRadius
+                                //drawCircles(x,y,interpolateCircleRadius)
+                                //console.log('插值圆半径负：',interpolateCircleRadius)
+                                
+                                for(var i =0; i < interpolateNumber; ++i){
+                                    drawCircles(x,y,interpolateCircleRadius[i])
+                                    console.log('第',i,'个插值的半径：',interpolateCircleRadius[i])   
+                                }
+                                
+                                drawCircles(x,y,circleRadius)
+                                console.log('圆半径负：',circleRadius)
+                                //circles.push(new Circle(x,y,70 - i_addVelocity))
+                            }
+                            /*
+                            if(circles.length > 10){
+                                for(var i = 0; i < circles.length; ++i){
+                                    circles[i] = circles[i+1]   
+                                }
+                                circles.pop(10)
+                            }
+                            */
+                            //drawCircles()
+                            //console.log('circles',circles)
+                            //console.log('velocityFirst',velocityFirst)
+                            //console.log('velocityLast',velocityLast)
+                            //console.log('呈现的加速度', addvelocity)
+                        }
+                        preX = e.pageX
+                        preY = e.pageY
+                        preTime = currentTime
+                        //velocityFirst = 0
+                        
+                    //}
+                    
+                }
+            }                
+            
+        </script>
+    </body>
+</html>
